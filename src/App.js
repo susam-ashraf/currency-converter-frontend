@@ -62,17 +62,11 @@ function App() {
     };
 
     const storeDataToServer = () => {
-        console.log('inside store to server----');
-        console.log(setConvertedValue);
 
-        return axios.post('http://34d342e6229f.ngrok.io/dashboard/public/api/store/currency', { amount : value1, from : selectedCountry2.unit, to : destinationCurrency.unit, converted: 80, converted_to_usd: 80 })
+        return axios.post('http://127.0.0.1:8000/api/store/currency', { amount : value1, from : selectedCountry2.unit, to : destinationCurrency.unit, converted: convertedValue, converted_to_usd: convertedValue })
             .then((res) => {
 
-                console.log('Store--------/---------');
-
                 console.log(res);
-
-
 
             });
     };
@@ -83,7 +77,6 @@ function App() {
             .then((res) => {
                 console.log(res);
                 console.log(res.data);
-
 
                 let objt = `${selectedCountry2.unit}_${destinationCurrency.unit}`;
 
