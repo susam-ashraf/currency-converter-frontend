@@ -14,19 +14,17 @@ import 'primeflex/primeflex.css';
 import logo from './logo.svg';
 import './App.css';
 import axios from "axios";
+import {
+    convertCurrency,
+    getCurrencyList,
+    storeDataToServer, timer
+} from "./services/convertionHandler";
 
 function App() {
 
-
-    let currencyNamesGlobal = [];
-
-  const [text, setText] = useState('');
-  const toastRef = useRef();
-
     const [convertedValue, setConvertedValue] = useState('');
-    const [value1, setValue1] = useState('');
-    const [value3, setValue3] = useState('');
-    const [selectedCountry2, setSelectedCountry2] = useState(null);
+    const [amount, setAmount] = useState('');
+    const [from, setFrom] = useState(null);
     const [destinationCurrency, setSelectedDestinationCurrency] = useState(null);
     const [countries, setCountries] = useState([]);
     const [filteredCountries, setFilteredCountries] = useState(null);
@@ -36,62 +34,29 @@ function App() {
 
 
 
-    useEffect(() => {
+    useEffect(async () => {
 
-        getCountries();
+        let list = await getCurrencyList();
 
+        setCountries(list);
 
     }, []);
 
-    const getCountries = () => {
-        return axios.get('http://api.currencylayer.com/list?access_key=1e8cd3ce10e28f54775c8989af651940&format=1')
-            .then((res) => {
-
-                let object1 = res.data.currencies;
-
-                for (const [key, value] of Object.entries(object1)) {
-                    currencyNamesGlobal.push(
-                        {"name": `${key} - ${value}`, "unit": `${key}`}
-                    );
-                };
-
-                setCountries(currencyNamesGlobal);
 
 
-            });
-    };
 
-    const storeDataToServer = () => {
+  const onFormSubmit = async (e) => {
 
-        return axios.post('http://127.0.0.1:8000/api/store/currency', { amount : value1, from : selectedCountry2.unit, to : destinationCurrency.unit, converted: convertedValue, converted_to_usd: convertedValue })
-            .then((res) => {
+      e.preventDefault();
 
-                console.log(res);
+      let converted = await convertCurrency(amount, from, destinationCurrency);
+      setConvertedValue(converted);
+      await timer(100);
+      await storeDataToServer(amount, from, destinationCurrency, convertedValue, convertedValue);
 
-            });
-    };
+  }
 
-    const convertCurrency = () => {
-
-        return axios.get(`https://free.currconv.com/api/v7/convert?q=${selectedCountry2.unit}_${destinationCurrency.unit}&compact=ultra&apiKey=2c47ef9027a093d41e2e`)
-            .then((res) => {
-                console.log(res);
-                console.log(res.data);
-
-                let objt = `${selectedCountry2.unit}_${destinationCurrency.unit}`;
-
-                let total = res.data[objt] * value1;
-                console.log('converted --------');
-                console.log(total);
-
-                setConvertedValue(total.toFixed(2));
-
-
-            });
-    };
-
-
-    const searchCountry = (event) => {
+  const searchCountry = (event) => {
         setTimeout(() => {
             let _filteredCountries;
             if (!event.query.trim().length) {
@@ -107,49 +72,36 @@ function App() {
         }, 250);
     }
 
-  const onFormSubmit = async (e) => {
 
-      e.preventDefault();
 
-      await convertCurrency();
-
-      await storeDataToServer();
-
-      console.log(selectedCountry2);
-
-  }
-
-    const itemTemplate = (item) => {
+  const itemTemplate = (item) => {
         return (
             <div className="country-item">
-                {/*<img alt={item.name} src={`showcase/demo/images/flag_placeholder.png`} onError={(e) => e.target.src='https://www.primefaces.org/wp-content/uploads/2020/05/placeholder.png'} className={`flag flag-${item.code.toLowerCase()}`} />*/}
                 <div>{item.name}</div>
             </div>
         );
     }
 
+
   return (
     <div className="App">
 
-      <Toast ref={toastRef} />
 
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
       </header>
 
       <form className="p-d-flex p-jc-center p-mt-6" onSubmit={onFormSubmit}>
-        {/*<InputText value={text} onChange={(e) => setText(e.target.value)} />*/}
-        {/*<Button type="submit" label="Submit" icon="pi pi-check" className="p-ml-2"/>*/}
 
           <div>
               <h4>Amount</h4>
               <br/>
-              <InputText value={value1} onChange={(e) => setValue1(e.target.value)}/>
+              <InputText value={amount} onChange={(e) => setAmount(e.target.value)}/>
           </div>
           <div>
             <h4>From</h4>
             <br/>
-            <AutoComplete value={selectedCountry2} suggestions={filteredCountries} completeMethod={searchCountry} field="unit" dropdown forceSelection itemTemplate={itemTemplate} onChange={(e) => setSelectedCountry2(e.value)} />
+            <AutoComplete value={from} suggestions={filteredCountries} completeMethod={searchCountry} field="unit" dropdown forceSelection itemTemplate={itemTemplate} onChange={(e) => setFrom(e.value)} />
           </div>
           <div>
               <h4>To</h4>
